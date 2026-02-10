@@ -1,0 +1,471 @@
+---
+layout: default
+title: Panel Kendali Dosen
+---
+
+<script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+
+<div id="admin-view" class="hidden space-y-12 pb-20">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tight">Panel Kendali Dosen</h1>
+            <p class="text-slate-500 font-medium">Manajemen tugas, penilaian, dan kontrol konten akademik.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center gap-2 text-xs no-print">
+                📊 Export Excel
+            </button>
+            <button onclick="window.print()" class="bg-slate-800 text-white px-4 py-3 rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg shadow-slate-100 flex items-center gap-2 text-xs no-print">
+                📄 Cetak PDF
+            </button>
+            <button onclick="openCreateMode()" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 no-print">
+                + Buat Tugas Baru
+            </button>
+            <button onclick="loadAdminData()" class="bg-white border border-slate-200 p-3 rounded-xl hover:bg-slate-50 transition-all shadow-sm no-print">
+                🔄
+            </button>
+        </div>
+    </header>
+
+    <section class="bg-indigo-50 p-8 rounded-[2.5rem] border border-indigo-100 animate-fade no-print">
+        <h3 class="font-black text-indigo-900 mb-4 flex items-center gap-2">
+            <span class="bg-white p-2 rounded-lg text-xs">📚</span> Kelola Mata Kuliah
+        </h3>
+        <div class="flex flex-col md:flex-row gap-4 mb-6">
+            <input type="text" id="subjectInput" placeholder="Ketik Nama Mata Kuliah Baru..." 
+                   class="flex-1 p-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+            <button onclick="addSubject()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition shadow-lg">
+                Tambah Matkul
+            </button>
+        </div>
+        <div id="subjectBadgeList" class="flex flex-wrap gap-2"></div>
+    </section>
+
+    <div id="task-form" class="hidden bg-white p-8 rounded-[2.5rem] shadow-xl border border-indigo-100 animate-fade no-print">
+        <h2 id="form-title" class="text-2xl font-black mb-6 flex items-center gap-2 text-slate-800">📝 Buat Tugas Baru</h2>
+        <input type="hidden" id="editTaskId">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">Pilih Mata Kuliah</label>
+                <select id="newSubject" class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent"></select>
+
+                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest">Informasi Tugas</label>
+                <input type="text" id="newTitle" placeholder="Judul Tugas (e.g. Pertemuan 1)" 
+                       class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent">
+                <input type="datetime-local" id="newDeadline" 
+                       class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent">
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="uploadTaskImage()" class="bg-indigo-100 text-indigo-600 px-4 py-3 rounded-xl text-xs font-bold hover:bg-indigo-200 transition">
+                        🖼️ Unggah Gambar Petunjuk
+                    </button>
+                    <span id="imgStatus" class="text-[10px] text-green-600 font-bold"></span>
+                </div>
+            </div>
+            
+            <div class="flex flex-col">
+                <label class="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-widest mb-4">Instruksi Detail</label>
+                <textarea id="newDesc" placeholder="Jelaskan detail tugas di sini..." 
+                          class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 h-full min-h-[150px] border border-transparent"></textarea>
+            </div>
+            
+            <div class="md:col-span-2 flex gap-3">
+                <button id="btnSubmitTask" onclick="saveTask()" class="flex-[2] bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-700 transition shadow-lg">
+                    PUBLIKASIKAN TUGAS
+                </button>
+                <button onclick="toggleTaskForm()" class="flex-1 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="filterContainer" class="flex flex-wrap gap-2 px-2 overflow-x-auto pb-2 no-print">
+        </div>
+
+    <section class="space-y-4 no-print">
+        <div class="flex items-center gap-2 px-2">
+            <span class="w-2 h-2 bg-indigo-500 rounded-full"></span>
+            <h3 class="font-black text-slate-800 uppercase tracking-widest text-[10px]">Daftar Tugas Aktif</h3>
+        </div>
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                    <tr>
+                        <th class="p-6">Mata Kuliah</th>
+                        <th class="p-6">Tugas</th>
+                        <th class="p-6 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tasks-list-body" class="divide-y divide-slate-50"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="space-y-4">
+        <div class="flex items-center gap-2 px-2 no-print">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            <h3 class="font-black text-slate-800 uppercase tracking-widest text-[10px]">Riwayat Pengumpulan Mahasiswa</h3>
+        </div>
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-50 flex justify-between items-center no-print">
+                <h3 class="font-bold text-slate-800 text-sm">Submission Terbaru</h3>
+                <span id="total-count" class="text-[10px] font-black bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full uppercase">0 Kiriman</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="reportTable">
+                    <thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                        <tr>
+                            <th class="p-6">Mahasiswa</th>
+                            <th class="p-6">Tugas & Status</th>
+                            <th class="p-6 text-center">Nilai</th>
+                            <th class="p-6 text-center no-print">Opsi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-table-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div id="access-denied" class="hidden py-40 text-center space-y-4 animate-fade">
+    <div class="text-6xl">🔒</div>
+    <h2 class="text-2xl font-black text-slate-800">Akses Terkunci</h2>
+    <p class="text-slate-500">Gunakan akun Dosen untuk mengakses panel ini.</p>
+    <a href="/" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">Kembali ke Beranda</a>
+</div>
+
+<script>
+let tempImageUrl = "";
+let isEditMode = false;
+let globalTasks = [];
+let globalSubmissions = [];
+
+function getHeaders() {
+    return {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+    };
+}
+
+// --- INITIALIZATION ---
+
+async function loadAdminData() {
+    const role = localStorage.getItem('userRole');
+    if(role !== 'admin') {
+        document.getElementById('access-denied').classList.remove('hidden');
+        return;
+    }
+    document.getElementById('admin-view').classList.remove('hidden');
+    
+    const loadingAlert = Swal.fire({ 
+        title: 'Memuat Data...', 
+        allowOutsideClick: false, 
+        didOpen: () => Swal.showLoading() 
+    });
+
+    try {
+        const [resTasks, resSubmits] = await Promise.all([
+            fetch('/.netlify/functions/manage-tasks'),
+            fetch('/.netlify/functions/get-all-tasks', { headers: getHeaders() })
+        ]);
+
+        globalTasks = await resTasks.json();
+        globalSubmissions = await resSubmits.json();
+
+        renderTasksTable(globalTasks);
+        renderSubmissionsTable(globalSubmissions);
+        loadSubjects();
+        
+        Swal.close();
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Gagal mengambil data dari server', 'error');
+    }
+}
+
+// --- TASK FORM LOGIC ---
+
+function openCreateMode() {
+    isEditMode = false;
+    document.getElementById('form-title').innerText = "📝 Buat Tugas Baru";
+    document.getElementById('btnSubmitTask').innerText = "PUBLIKASIKAN TUGAS";
+    
+    // Reset fields
+    document.getElementById('editTaskId').value = "";
+    document.getElementById('newTitle').value = "";
+    document.getElementById('newDeadline').value = "";
+    document.getElementById('newDesc').value = "";
+    document.getElementById('imgStatus').innerText = "";
+    tempImageUrl = "";
+
+    const form = document.getElementById('task-form');
+    form.classList.remove('hidden');
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function editTask(id) {
+    const task = globalTasks.find(t => t._id === id);
+    if(!task) return;
+    
+    isEditMode = true;
+    document.getElementById('form-title').innerText = "📝 Edit Tugas";
+    document.getElementById('btnSubmitTask').innerText = "SIMPAN PERUBAHAN";
+    document.getElementById('editTaskId').value = task._id;
+    document.getElementById('newSubject').value = task.subject || "";
+    document.getElementById('newTitle').value = task.title;
+    // Format deadline to match datetime-local input
+    if(task.deadline) {
+        document.getElementById('newDeadline').value = new Date(task.deadline).toISOString().slice(0, 16);
+    }
+    document.getElementById('newDesc').value = task.description || "";
+    
+    document.getElementById('task-form').classList.remove('hidden');
+    document.getElementById('task-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function saveTask() {
+    const id = document.getElementById('editTaskId').value;
+    const payload = {
+        id,
+        subject: document.getElementById('newSubject').value,
+        title: document.getElementById('newTitle').value,
+        deadline: document.getElementById('newDeadline').value,
+        description: document.getElementById('newDesc').value,
+        imageUrl: tempImageUrl
+    };
+
+    if(!payload.title || !payload.deadline) {
+        return Swal.fire('Peringatan', 'Judul dan Deadline wajib diisi!', 'warning');
+    }
+
+    const method = isEditMode ? 'PUT' : 'POST';
+    try {
+        const res = await fetch('/.netlify/functions/manage-tasks', { 
+            method, 
+            headers: getHeaders(), 
+            body: JSON.stringify(payload) 
+        });
+        
+        if(res.ok) {
+            Swal.fire('Sukses!', 'Tugas berhasil diproses.', 'success')
+                .then(() => location.reload());
+        }
+    } catch (err) {
+        Swal.fire('Error', 'Terjadi kesalahan saat menyimpan.', 'error');
+    }
+}
+
+// --- RENDERING TABLES ---
+
+function renderTasksTable(data) {
+    const body = document.getElementById('tasks-list-body');
+    body.innerHTML = data.map(tk => `
+        <tr class="hover:bg-slate-50/50 transition">
+            <td class="p-6"><span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black rounded-md">${tk.subject || 'Umum'}</span></td>
+            <td class="p-6">
+                <p class="font-black text-slate-800 text-sm">${tk.title}</p>
+                <p class="text-[10px] text-slate-400 font-bold italic">Deadline: ${new Date(tk.deadline).toLocaleString('id-ID')}</p>
+            </td>
+            <td class="p-6 text-center">
+                <button onclick="editTask('${tk._id}')" class="text-indigo-600 font-bold text-[10px] mr-3">EDIT</button>
+                <button onclick="deleteTask('${tk._id}')" class="text-red-400 font-bold text-[10px]">HAPUS</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderSubmissionsTable(data) {
+    const body = document.getElementById('admin-table-body');
+    document.getElementById('total-count').innerText = `${data.length} KIRIMAN`;
+    
+    body.innerHTML = data.map(s => {
+        const isGraded = s.grade !== null && s.grade !== "";
+        return `
+        <tr class="hover:bg-slate-50/50 transition">
+            <td class="p-6">
+                <p class="font-bold text-slate-800 text-sm">${s.studentName || 'Siswa'}</p>
+                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${s.student}</p>
+            </td>
+            <td class="p-6">
+                <p class="font-black text-slate-700 text-[11px] mb-1">${s.taskTitle}</p>
+                <div class="flex items-center gap-2">
+                    <a href="${s.fileUrl}" target="_blank" class="text-[9px] text-indigo-600 font-black hover:underline">LIHAT FILE ↗</a>
+                    ${s.isLate ? '<span class="text-[8px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded italic">TERLAMBAT</span>' : '<span class="text-[8px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded">TEPAT WAKTU</span>'}
+                </div>
+            </td>
+            <td class="p-6 text-center">
+                ${isGraded ? 
+                    `<div class="inline-block bg-slate-900 text-white w-10 h-10 leading-10 rounded-xl font-black text-xs shadow-md cursor-pointer" 
+                          onclick="openGradeModal('${s._id}', '${s.studentName}', '${s.grade}', '${s.feedback || ''}')" title="Klik untuk Edit Nilai">${s.grade}</div>` : 
+                    `<button onclick="openGradeModal('${s._id}', '${s.studentName}', '', '')" 
+                             class="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-2 rounded-xl font-black text-[9px] hover:bg-amber-100 transition-all no-print">BERI NILAI</button>`
+                }
+            </td>
+            <td class="p-6 text-center no-print">
+                <button onclick="deleteAssignment('${s._id}')" class="text-slate-300 hover:text-red-500 transition-colors">🗑️</button>
+            </td>
+        </tr>
+    `}).join('');
+}
+
+// --- GRADING MODAL ---
+
+async function openGradeModal(id, name, currentGrade, currentFeedback) {
+    const { value: formValues } = await Swal.fire({
+        title: `<div class="text-left"><p class="text-[10px] font-black uppercase text-indigo-500 mb-1">Input Penilaian</p><h2 class="text-xl font-black text-slate-800">${name}</h2></div>`,
+        html: `
+            <div class="text-left p-2 space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Nilai (0-100 / Huruf)</label>
+                    <input id="swal-grade" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none font-black text-xl" value="${currentGrade}" placeholder="Contoh: 95">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Feedback/Catatan</label>
+                    <textarea id="swal-feedback" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 outline-none h-28 resize-none text-sm" placeholder="Contoh: Bagus...">${currentFeedback}</textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan Nilai',
+        buttonsStyling: false,
+        customClass: {
+            popup: 'rounded-[2.5rem] p-6',
+            confirmButton: 'bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-xs mx-2 shadow-lg shadow-indigo-100',
+            cancelButton: 'bg-slate-100 text-slate-400 px-8 py-4 rounded-2xl font-black text-xs mx-2'
+        },
+        preConfirm: () => {
+            const grade = document.getElementById('swal-grade').value;
+            if (!grade) return Swal.showValidationMessage('Nilai wajib diisi!');
+            return { grade, feedback: document.getElementById('swal-feedback').value };
+        }
+    });
+
+    if (formValues) {
+        saveGradeToServer(id, formValues.grade, formValues.feedback);
+    }
+}
+
+async function saveGradeToServer(id, grade, feedback) {
+    try {
+        const res = await fetch('/.netlify/functions/update-grade', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ taskId: id, grade, feedback })
+        });
+        if(res.ok) {
+            Swal.fire({ icon: 'success', title: 'Tersimpan', showConfirmButton: false, timer: 1500 });
+            loadAdminData();
+        }
+    } catch (err) { Swal.fire('Error', 'Gagal simpan nilai', 'error'); }
+}
+
+// --- EXPORT & FILTERS ---
+
+function exportToExcel() {
+    if (globalSubmissions.length === 0) return Swal.fire('Info', 'Data kosong', 'info');
+    
+    const data = globalSubmissions.map((s, i) => ({
+        "No": i + 1,
+        "Nama": s.studentName,
+        "Email": s.student,
+        "Tugas": s.taskTitle,
+        "Waktu Kumpul": new Date(s.submittedAt).toLocaleString('id-ID'),
+        "Status": s.isLate ? "Terlambat" : "Tepat Waktu",
+        "Nilai": s.grade || "N/A"
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap Nilai");
+    XLSX.writeFile(wb, `Rekap_Nilai_${new Date().toLocaleDateString()}.xlsx`);
+}
+
+async function loadSubjects() {
+    const res = await fetch('/.netlify/functions/manage-subjects');
+    const subjects = await res.json();
+    
+    document.getElementById('newSubject').innerHTML = subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+    
+    document.getElementById('subjectBadgeList').innerHTML = subjects.map(s => `
+        <span class="bg-white px-4 py-2 rounded-xl text-xs font-black text-indigo-600 border border-indigo-100 shadow-sm flex items-center gap-2">
+            ${s.name} <button onclick="deleteSubject('${s._id}')" class="text-red-400 hover:text-red-600">×</button>
+        </span>
+    `).join('');
+
+    const filterBtns = `<button onclick="filterBySubject('Semua')" class="filter-btn px-4 py-2 bg-slate-900 text-white rounded-full text-xs font-bold">Semua Matkul</button>` + 
+        subjects.map(s => `<button onclick="filterBySubject('${s.name}')" class="filter-btn px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-full text-xs font-bold">${s.name}</button>`).join('');
+    
+    document.getElementById('filterContainer').innerHTML = filterBtns;
+}
+
+function filterBySubject(sub) {
+    const filteredTasks = sub === 'Semua' ? globalTasks : globalTasks.filter(t => t.subject === sub);
+    renderTasksTable(filteredTasks);
+
+    const filteredSubmits = sub === 'Semua' ? globalSubmissions : globalSubmissions.filter(s => {
+        const parentTask = globalTasks.find(t => t.title === s.taskTitle);
+        return parentTask && parentTask.subject === sub;
+    });
+    renderSubmissionsTable(filteredSubmits);
+}
+
+// --- DELETE OPS ---
+
+async function deleteTask(id) {
+    const confirm = await Swal.fire({ 
+        title: 'Hapus Tugas?', 
+        text: "Data pengumpulan mahasiswa terkait juga akan hilang.", 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonText: 'Ya, Hapus' 
+    });
+    if(confirm.isConfirmed) {
+        await fetch('/.netlify/functions/manage-tasks', { method: 'DELETE', headers: getHeaders(), body: JSON.stringify({ id }) });
+        location.reload();
+    }
+}
+
+async function addSubject() {
+    const name = document.getElementById('subjectInput').value;
+    if(!name) return;
+    await fetch('/.netlify/functions/manage-subjects', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ name }) });
+    document.getElementById('subjectInput').value = "";
+    loadSubjects();
+}
+
+async function deleteSubject(id) {
+    await fetch('/.netlify/functions/manage-subjects', { method: 'DELETE', headers: getHeaders(), body: JSON.stringify({ id }) });
+    loadSubjects();
+}
+
+function toggleTaskForm() { 
+    document.getElementById('task-form').classList.toggle('hidden'); 
+}
+
+function uploadTaskImage() {
+    cloudinary.openUploadWidget({ cloudName: 'dzsqaauqn', uploadPreset: 'eduflow' }, (error, result) => {
+        if (!error && result.event === "success") {
+            tempImageUrl = result.info.secure_url;
+            document.getElementById('imgStatus').innerText = "Terunggah! ✅";
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadAdminData);
+</script>
+
+<style>
+@media print {
+    .no-print, nav, footer, button, .filter-btn, #subjectBadgeList, #task-form, section:first-of-type {
+        display: none !important;
+    }
+    body { background: white !important; }
+    #admin-view { padding-bottom: 0 !important; }
+    table { width: 100% !important; border: 1px solid #eee !important; }
+    th, td { padding: 10px !important; border-bottom: 1px solid #eee !important; font-size: 10px !important; }
+}
+.animate-fade { animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>

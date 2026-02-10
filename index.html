@@ -1,0 +1,372 @@
+---
+layout: default
+title: Dashboard Mahasiswa
+---
+
+<div id="pull-indicator" class="fixed top-0 left-0 w-full flex justify-center pt-6 opacity-0 pointer-events-none z-[150] transition-opacity">
+    <div id="pull-spinner" class="bg-indigo-600 text-white p-3 rounded-full shadow-2xl scale-0 transition-transform">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+    </div>
+</div>
+
+<div id="student-content" class="hidden">
+    <div class="mb-12">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div class="animate-fade-right">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight">Halo, <span id="welcome-name" class="text-indigo-600">Mahasiswa</span>! 👋</h2>
+                    <button onclick="refreshData()" id="refresh-btn" class="p-2 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all group" title="Segarkan Data">
+                        <svg id="refresh-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 group-hover:text-indigo-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-slate-500 font-medium">Pilih tugas yang tersedia untuk dikerjakan hari ini.</p>
+            </div>
+            <div class="hidden md:block animate-fade-left">
+                <span class="text-[10px] font-black bg-indigo-50 text-indigo-500 px-4 py-2 rounded-xl uppercase tracking-widest border border-indigo-100">Sistem Akademik v2.0</span>
+            </div>
+        </div>
+
+        <div class="mb-8 animate-fade-up">
+            <div class="flex items-center gap-2 mb-4 px-1">
+                <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filter Mata Kuliah</span>
+            </div>
+            <div id="subject-filter-container" class="flex flex-wrap gap-2">
+                <button onclick="filterTasks('Semua')" class="sub-filter-btn active bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-slate-200">
+                    Semua
+                </button>
+            </div>
+        </div>
+        
+        <div id="available-tasks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full py-20 text-center">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
+                <p class="text-slate-400 font-bold animate-pulse">Menghubungkan ke server...</p>
+            </div>
+        </div>
+    </div>
+
+    <hr class="border-slate-200/60 mb-12">
+
+    <div class="space-y-6 animate-fade-up">
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-800">Riwayat Pengumpulan</h2>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Status penilaian dan proteksi data</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="stat-badge" class="bg-slate-900 text-white px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase">0 TOTAL</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <tbody id="student-table-body" class="divide-y divide-slate-50"></tbody>
+                </table>
+                <div id="empty-msg" class="hidden p-24 text-center">
+                    <div class="text-6xl mb-6">📁</div>
+                    <h3 class="text-slate-800 font-black text-xl mb-2">Belum ada aktivitas</h3>
+                    <p class="text-slate-400 font-medium max-w-xs mx-auto text-sm italic">Tugas yang kamu kirimkan akan muncul di sini.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="taskModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl animate-zoom">
+        <div class="p-10 relative">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <span class="text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mb-2 block">Detail Instruksi</span>
+                    <h2 id="modalTitle" class="text-4xl font-black text-slate-900 tracking-tighter leading-tight"></h2>
+                </div>
+                <button onclick="closeModal()" class="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all group">
+                    <span class="text-2xl transition-transform group-hover:rotate-90">&times;</span>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-3 mb-8">
+                <p id="modalDeadline" class="text-red-500 text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-red-50 rounded-xl border border-red-100"></p>
+                <span id="modalSubject" class="text-slate-400 text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">Umum</span>
+            </div>
+
+            <div id="modalDesc" class="text-slate-600 leading-relaxed mb-10 text-base bg-slate-50/50 p-8 rounded-[2rem] border border-slate-100/50 italic shadow-inner"></div>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="hidden" id="selectedTaskTitle">
+                <button id="btnUploadInModal" onclick="handleUploadClick()" class="flex-[3] bg-indigo-600 text-white font-black py-5 rounded-[1.5rem] shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all transform active:scale-95 flex items-center justify-center gap-3 text-lg">
+                    <span>🚀</span> Kirim Tugas Sekarang
+                </button>
+                <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-500 font-bold py-5 rounded-[1.5rem] hover:bg-slate-200 transition">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .spin-animate { animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+
+<script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+
+<script>
+const API_BASE = '/.netlify/functions';
+let ALL_TASKS = [];
+let USER_HISTORY = [];
+let touchStart = 0;
+let touchEnd = 0;
+const PULL_THRESHOLD = 150;
+
+// --- AUTH & HEADERS ---
+function getAuthHeaders() {
+    return { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' };
+}
+
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    const name = localStorage.getItem('userName');
+    if (!token) { window.location.href = '/login'; return false; }
+    if(name) document.getElementById('welcome-name').innerText = name.split(' ')[0];
+    document.getElementById('student-content').classList.remove('hidden');
+    return true;
+}
+
+// --- DATA LOADING ---
+async function loadSubjects() {
+    try {
+        const res = await fetch(`${API_BASE}/manage-subjects`);
+        const subjects = await res.json();
+        const container = document.getElementById('subject-filter-container');
+        
+        // Reset container tapi biarkan tombol "Semua"
+        container.innerHTML = `<button onclick="filterTasks('Semua')" class="sub-filter-btn active bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-slate-200">Semua</button>`;
+        
+        subjects.forEach(sub => {
+            const btn = document.createElement('button');
+            btn.className = "sub-filter-btn bg-white border border-slate-200 text-slate-400 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:border-indigo-300 hover:text-indigo-600";
+            btn.innerText = sub.name;
+            btn.onclick = () => {
+                document.querySelectorAll('.sub-filter-btn').forEach(b => {
+                    b.classList.remove('active', 'bg-slate-900', 'text-white', 'shadow-lg');
+                    b.classList.add('bg-white', 'text-slate-400');
+                });
+                btn.classList.add('active', 'bg-slate-900', 'text-white', 'shadow-lg');
+                filterTasks(sub.name);
+            };
+            container.appendChild(btn);
+        });
+    } catch (e) { console.error(e); }
+}
+
+async function loadAvailableTasks() {
+    try {
+        const res = await fetch(`${API_BASE}/manage-tasks`);
+        ALL_TASKS = await res.json();
+        renderTasks(ALL_TASKS);
+    } catch (err) { console.error(err); }
+}
+
+async function loadHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/get-tasks`, { headers: getAuthHeaders() });
+        const data = await res.json();
+        USER_HISTORY = data;
+        renderHistory(data);
+    } catch (e) { console.error(e); }
+}
+
+// --- RENDERING ---
+function renderTasks(tasks) {
+    const container = document.getElementById('available-tasks-list');
+    if(!tasks || tasks.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-16 text-center border-4 border-dashed border-slate-50 rounded-[3rem]"><p class="text-slate-300 font-black italic text-lg uppercase">Tidak ada tugas</p></div>`;
+        return;
+    }
+    container.innerHTML = tasks.map(t => {
+        const isExpired = new Date() > new Date(t.deadline);
+        const alreadyDone = USER_HISTORY.some(h => h.taskTitle === t.title);
+        return `
+            <div onclick="openTaskDetail('${t._id}')" class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer group relative overflow-hidden animate-fade-up">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity"><span class="text-6xl font-black">📝</span></div>
+                <div class="relative z-10">
+                    <span class="text-indigo-500 text-[9px] font-black uppercase tracking-[0.2em] mb-3 block">${t.subject || 'Umum'}</span>
+                    <h3 class="font-black text-2xl text-slate-800 group-hover:text-indigo-600 transition leading-tight mb-6">${t.title}</h3>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 ${isExpired ? 'text-red-500' : 'text-emerald-500'}">
+                            ${alreadyDone ? '✅ SELESAI' : `⌛ ${isExpired ? 'Berakhir' : 'Batas'}: ${new Date(t.deadline).toLocaleDateString('id-ID')}`}
+                        </span>
+                        <span class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">→</span>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function renderHistory(data) {
+    const table = document.getElementById('student-table-body');
+    document.getElementById('stat-badge').innerText = `${data.length} TOTAL`;
+    
+    if(!data || data.length === 0) {
+        document.getElementById('empty-msg').classList.remove('hidden');
+        table.innerHTML = "";
+    } else {
+        document.getElementById('empty-msg').classList.add('hidden');
+        table.innerHTML = data.map(t => {
+            const isGraded = t.grade !== null && t.grade !== "";
+            return `
+            <tr class="hover:bg-slate-50/80 transition-all group border-b border-slate-50 last:border-0">
+                <td class="p-8">
+                    <div class="flex items-start gap-6">
+                        <div class="w-14 h-14 bg-white border border-slate-100 rounded-2xl shadow-sm flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                            ${t.fileUrl.includes('.pdf') ? '📄' : '🖼️'}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-black text-slate-800 text-xl mb-1">${t.taskTitle}</h4>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded">📅 ${new Date(t.submittedAt).toLocaleDateString('id-ID')}</span>
+                                <a href="${t.fileUrl}" target="_blank" class="text-[9px] font-black text-indigo-600 hover:underline uppercase tracking-widest">Lihat File</a>
+                                ${!isGraded ? `<button onclick="deleteSubmission('${t._id}')" class="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest ml-2 transition-colors">🗑️ Hapus</button>` 
+                                : `<span class="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-2 cursor-not-allowed" title="Tugas sudah dinilai">🔒 Terkunci</span>`}
+                            </div>
+                            ${t.feedback ? `<div class="mt-4 p-4 bg-indigo-50/50 border-l-4 border-indigo-400 rounded-r-2xl"><p class="text-xs text-slate-700 italic">"${t.feedback}"</p></div>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td class="p-8 text-right">
+                    ${t.grade ? `<div class="bg-slate-900 text-white w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black shadow-lg">${t.grade}</div>` 
+                    : `<span class="text-[9px] bg-amber-50 text-amber-600 px-3 py-1 rounded-full font-black uppercase border border-amber-100 animate-pulse">Checking</span>`}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+}
+
+// --- ACTIONS ---
+async function refreshData() {
+    const btn = document.getElementById('refresh-btn');
+    const icon = document.getElementById('refresh-icon');
+    if(icon) icon.classList.add('spin-animate');
+    if(btn) btn.disabled = true;
+
+    try {
+        await initDashboard();
+        if (window.navigator.vibrate) window.navigator.vibrate(10);
+    } catch (e) { console.error(e); } finally {
+        setTimeout(() => {
+            if(icon) icon.classList.remove('spin-animate');
+            if(btn) btn.disabled = false;
+        }, 500);
+    }
+}
+
+function filterTasks(subjectName) {
+    if (subjectName === 'Semua') renderTasks(ALL_TASKS);
+    else renderTasks(ALL_TASKS.filter(t => t.subject === subjectName));
+}
+
+// --- PULL TO REFRESH LOGIC ---
+document.addEventListener('touchstart', (e) => { touchStart = e.targetTouches[0].pageY; }, { passive: true });
+document.addEventListener('touchmove', (e) => {
+    touchEnd = e.targetTouches[0].pageY;
+    const distance = touchEnd - touchStart;
+    const indicator = document.getElementById('pull-indicator');
+    const spinner = document.getElementById('pull-spinner');
+    if (window.scrollY === 0 && distance > 0) {
+        indicator.style.opacity = Math.min(distance / PULL_THRESHOLD, 1);
+        spinner.style.transform = `scale(${Math.min(distance / PULL_THRESHOLD, 1)}) rotate(${distance * 2}deg)`;
+    }
+}, { passive: true });
+
+document.addEventListener('touchend', async () => {
+    const distance = touchEnd - touchStart;
+    const indicator = document.getElementById('pull-indicator');
+    const spinner = document.getElementById('pull-spinner');
+    if (window.scrollY === 0 && distance >= PULL_THRESHOLD) {
+        spinner.style.transform = 'scale(1.2)';
+        await refreshData();
+    }
+    indicator.style.opacity = '0';
+    spinner.style.transform = 'scale(0)';
+    touchStart = 0; touchEnd = 0;
+}, { passive: true });
+
+// --- MODAL & CLOUDINARY ---
+async function openTaskDetail(id) {
+    try {
+        const res = await fetch(`${API_BASE}/manage-tasks?id=${id}`);
+        const task = await res.json();
+        document.getElementById('modalTitle').innerText = task.title;
+        document.getElementById('modalDesc').innerText = task.description || "Ikuti instruksi dosen.";
+        document.getElementById('modalDeadline').innerText = "Deadline: " + new Date(task.deadline).toLocaleString('id-ID');
+        document.getElementById('selectedTaskTitle').value = task.title;
+        
+        const isExpired = new Date() > new Date(task.deadline);
+        const isAlreadyDone = USER_HISTORY.some(h => h.taskTitle === task.title);
+        const btn = document.getElementById('btnUploadInModal');
+        
+        if (isAlreadyDone) {
+            btn.disabled = true; btn.innerHTML = "✅ SUDAH DIKUMPULKAN";
+            btn.className = "flex-[3] bg-emerald-100 text-emerald-600 font-black py-5 rounded-[1.5rem] cursor-not-allowed border border-emerald-200";
+        } else if (isExpired) {
+            btn.disabled = true; btn.innerHTML = "🚨 DEADLINE TERLEWAT";
+            btn.className = "flex-[3] bg-slate-200 text-slate-400 font-black py-5 rounded-[1.5rem] cursor-not-allowed";
+        } else {
+            btn.disabled = false; btn.innerHTML = "🚀 Kirim Tugas Sekarang";
+            btn.className = "flex-[3] bg-indigo-600 text-white font-black py-5 rounded-[1.5rem] hover:bg-indigo-700 shadow-xl shadow-indigo-200";
+        }
+        document.getElementById('taskModal').classList.remove('hidden');
+    } catch (e) { console.error(e); }
+}
+
+function closeModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+const myWidget = cloudinary.createUploadWidget({ cloudName: 'dzsqaauqn', uploadPreset: 'eduflow' }, (error, result) => {
+    if (!error && result.event === "success") submitFinalData(result.info.secure_url);
+});
+
+function handleUploadClick() { myWidget.open(); }
+
+async function submitFinalData(url) {
+    closeModal();
+    try {
+        const res = await fetch(`${API_BASE}/submit-task`, {
+            method: 'POST', headers: getAuthHeaders(),
+            body: JSON.stringify({ title: document.getElementById('selectedTaskTitle').value, fileUrl: url })
+        });
+        if(res.ok) { Swal.fire('Berhasil!', 'Tugas terkirim.', 'success'); refreshData(); } 
+        else { const r = await res.json(); Swal.fire('Gagal!', r.message, 'error'); }
+    } catch (e) { Swal.fire('Error', 'Terjadi kesalahan sistem', 'error'); }
+}
+
+async function deleteSubmission(id) {
+    const result = await Swal.fire({
+        title: 'Hapus pengumpulan?', text: "Tugas yang sudah dinilai tidak bisa dihapus.", icon: 'warning',
+        showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Hapus',
+        customClass: { popup: 'rounded-[2rem]' }
+    });
+    if (result.isConfirmed) {
+        try {
+            const res = await fetch(`${API_BASE}/submit-task?id=${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+            if (res.ok) { Swal.fire('Terhapus!', 'Data telah dihapus.', 'success'); refreshData(); } 
+            else { Swal.fire('Gagal!', 'Terjadi kesalahan', 'error'); }
+        } catch (e) { Swal.fire('Error', 'Gagal menghubungi server', 'error'); }
+    }
+}
+
+// --- INIT ---
+async function initDashboard() {
+    if (!checkAuth()) return;
+    await loadHistory();
+    await loadSubjects();
+    await loadAvailableTasks();
+}
+
+document.addEventListener('DOMContentLoaded', initDashboard);
+</script>

@@ -1,0 +1,160 @@
+---
+layout: default
+title: Masuk ke EduFlow
+---
+
+<div class="min-h-[80vh] flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div id="auth-card" class="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+            
+            <div class="flex p-2 bg-slate-50/50 m-4 rounded-[2rem] border border-slate-100">
+                <button onclick="switchTab('login')" id="tab-login" class="flex-1 py-3 rounded-[1.5rem] text-sm font-black transition-all bg-white shadow-sm text-indigo-600">
+                    MASUK
+                </button>
+                <button onclick="switchTab('register')" id="tab-register" class="flex-1 py-3 rounded-[1.5rem] text-sm font-black transition-all text-slate-400">
+                    DAFTAR
+                </button>
+            </div>
+
+            <div class="p-8 pt-4">
+                <div id="login-section" class="space-y-4 animate-fade">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-black text-slate-900">Selamat Datang</h2>
+                        <p class="text-slate-500 font-medium mt-1">Gunakan akun mahasiswa Anda</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="relative">
+                            <input type="email" id="loginEmail" placeholder="Email" 
+                                class="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium">
+                            <span class="absolute left-4 top-4 opacity-30">📧</span>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="loginPass" placeholder="Password" 
+                                class="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium">
+                            <span class="absolute left-4 top-4 opacity-30">🔑</span>
+                        </div>
+                    </div>
+
+                    <button onclick="handleLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-200 hover:bg-indigo-600 transition-all transform active:scale-95 mt-6">
+                        MASUK SEKARANG
+                    </button>
+                </div>
+
+                <div id="register-section" class="hidden space-y-4 animate-fade">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-black text-slate-900">Buat Akun</h2>
+                        <p class="text-slate-500 font-medium mt-1">Daftar sebagai mahasiswa baru</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <input type="text" id="regName" placeholder="Nama Lengkap" 
+                            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium">
+                        
+                        <input type="email" id="regEmail" placeholder="Email" 
+                            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium">
+                        
+                        <input type="password" id="regPass" placeholder="Buat Password" 
+                            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium">
+                    </div>
+
+                    <button onclick="handleRegister()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all transform active:scale-95 mt-6">
+                        DAFTAR AKUN
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <p class="text-center mt-8 text-slate-400 text-xs font-bold uppercase tracking-widest">EduFlow v2.0 &bull; Private System</p>
+    </div>
+</div>
+
+<script>
+// Toggle Tampilan Login/Register
+function switchTab(type) {
+    const loginSec = document.getElementById('login-section');
+    const regSec = document.getElementById('register-section');
+    const tabLogin = document.getElementById('tab-login');
+    const tabReg = document.getElementById('tab-register');
+
+    if(type === 'login') {
+        loginSec.classList.remove('hidden');
+        regSec.classList.add('hidden');
+        tabLogin.className = "flex-1 py-3 rounded-[1.5rem] text-sm font-black transition-all bg-white shadow-sm text-indigo-600";
+        tabReg.className = "flex-1 py-3 rounded-[1.5rem] text-sm font-black transition-all text-slate-400";
+    } else {
+        loginSec.classList.add('hidden');
+        regSec.classList.remove('hidden');
+        tabReg.className = "flex-1 py-3 rounded-[1.5rem] text-sm font-black transition-all bg-white shadow-sm text-indigo-600";
+        tabLogin.className = "flex-1 py-3 rounded-[1.5rem] text-sm font-black transition-all text-slate-400";
+    }
+}
+
+// Handler Registrasi
+async function handleRegister() {
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPass').value;
+
+    if(!name || !email || !password) return Swal.fire('Oops!', 'Isi semua data ya.', 'warning');
+
+    try {
+        const res = await fetch('/.netlify/functions/auth-register', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+
+        if(res.ok) {
+            Swal.fire('Berhasil!', 'Akun sudah dibuat, silakan login.', 'success');
+            switchTab('login');
+        } else {
+            Swal.fire('Gagal', data.message, 'error');
+        }
+    } catch(e) {
+        Swal.fire('Error', 'Masalah koneksi server.', 'error');
+    }
+}
+
+// Handler Login
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPass').value;
+
+    if(!email || !password) return Swal.fire('Oops!', 'Email & Password wajib diisi.', 'warning');
+
+    try {
+        const res = await fetch('/.netlify/functions/auth-login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if(res.ok) {
+            // Simpan data login ke Browser
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userRole', data.role);
+            localStorage.setItem('userName', data.name);
+            localStorage.setItem('userEmail', email);
+
+            // Arahkan berdasarkan Role
+            if(data.role === 'admin') {
+                window.location.href = '/admin'; // Halaman admin Anda
+            } else {
+                window.location.href = '/'; // Halaman dashboard mahasiswa
+            }
+        } else {
+            Swal.fire('Gagal Login', data.message, 'error');
+        }
+    } catch(e) {
+        Swal.fire('Error', 'Server tidak merespon.', 'error');
+    }
+}
+
+// Cek jika sudah login, langsung lempar ke dashboard
+window.onload = () => {
+    if(localStorage.getItem('token')) {
+        window.location.href = (localStorage.getItem('userRole') === 'admin') ? '/admin' : '/';
+    }
+}
+</script>

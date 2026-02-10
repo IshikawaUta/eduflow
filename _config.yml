@@ -1,0 +1,46 @@
+# ==========================================
+# EduFlow LMS - Configuration Settings
+# ==========================================
+
+# Site settings
+title: EduFlow LMS
+email: admin@eduflow.com
+description: >-
+  Platform manajemen pengumpulan tugas kuliah modern berbasis 
+  Jekyll, Netlify Functions, dan MongoDB Atlas.
+
+# Url settings
+baseurl: "" 
+url: "" 
+
+# Build settings
+# Menggunakan theme minimal agar tidak konflik dengan custom CSS Tailwind kita
+# theme: minima
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Exclude from processing
+# Sangat penting untuk mengecualikan folder node_modules dan backend functions
+# agar tidak ikut di-build oleh Jekyll sebagai file statis.
+exclude:
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - Gemfile
+  - Gemfile.lock
+  - package-lock.json
+  - netlify/          # Folder ini akan ditangani oleh Netlify, bukan Jekyll
+
+# Custom Collections (Opsional jika ingin menambah dokumentasi bantuan)
+collections:
+  tutorials:
+    output: true
+
+# Markdown Settings
+markdown: kramdown
+highlighter: rouge

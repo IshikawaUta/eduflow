@@ -1,0 +1,18 @@
+[build]
+  publish = "_site"
+  command = "bundle exec jekyll build"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "bundle exec jekyll serve --port 4000"
+  port = 8888
+  targetPort = 4000
+  publish = "_site"
+  autoLaunch = true

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} - EduFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+        .loader { border-top-color: #4f46e5; animation: spinner 0.8s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .page-enter { animation: fadeInUp 0.6s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-link { position: relative; transition: all 0.3s; }
+        .nav-link:hover { color: #4f46e5; }
+        /* Sembunyikan elemen admin secara default */
+        .admin-only { display: none; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen">
+    <nav class="p-4 glass sticky top-0 z-50 shadow-sm border-b border-slate-200/50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <a href="/" class="text-2xl font-black bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent tracking-tighter">EduFlow</a>
+                <div id="main-nav" class="hidden md:flex gap-6 text-sm font-medium text-slate-500">
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/admin" class="nav-link admin-only">Panel Dosen</a>
+                </div>
+            </div>
+            
+            <div id="user-menu" class="flex items-center gap-4">
+                <span id="user-name-display" class="text-xs font-bold text-slate-400 uppercase tracking-widest hidden md:inline"></span>
+                <button id="auth-btn" onclick="handleAuthAction()" class="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-100">
+                    MASUK
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6 page-enter">
+        {{ content }}
+    </main>
+
+    <div id="loading" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center z-[100]">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
+            <div class="loader rounded-full border-4 border-slate-100 h-12 w-12"></div>
+            <p class="text-xs font-bold text-slate-500 animate-pulse">MEMPROSES DATA...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUIBasedOnAuth();
+        });
+
+        function updateUIBasedOnAuth() {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('userRole');
+            const name = localStorage.getItem('userName');
+            
+            const authBtn = document.getElementById('auth-btn');
+            const nameDisplay = document.getElementById('user-name-display');
+            const adminLinks = document.querySelectorAll('.admin-only');
+
+            if (token) {
+                // User sudah login
+                authBtn.innerText = 'KELUAR';
+                authBtn.classList.replace('bg-slate-900', 'bg-red-50');
+                authBtn.classList.add('text-red-600');
+                
+                nameDisplay.innerText = name || 'User';
+                nameDisplay.classList.remove('hidden');
+
+                // Tampilkan menu admin jika role-nya admin
+                if (role === 'admin') {
+                    adminLinks.forEach(el => el.style.display = 'block');
+                }
+            } else {
+                // User belum login
+                authBtn.innerText = 'MASUK';
+                nameDisplay.classList.add('hidden');
+                adminLinks.forEach(el => el.style.display = 'none');
+            }
+        }
+
+        function handleAuthAction() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Logout
+                localStorage.clear();
+                window.location.href = '/login';
+            } else {
+                // Login redirect
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</body>
+</html>

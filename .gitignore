@@ -1,0 +1,36 @@
+# --- Jekyll & Build Outputs ---
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+vendor/
+node_modules/
+
+# --- Netlify ---
+# Mengabaikan folder lokal Netlify untuk dev
+.netlify/
+
+# --- Secrets & Config ---
+# WAJIB: Jangan unggah file yang berisi kunci API/Password
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Package Manager Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json

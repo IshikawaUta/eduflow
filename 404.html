@@ -1,0 +1,49 @@
+---
+permalink: /404.html
+layout: default
+title: Halaman Tidak Ditemukan
+---
+
+<div class="min-h-[70vh] flex items-center justify-center p-6">
+    <div class="max-w-md w-full text-center">
+        <div class="relative mb-10 animate-fade-up">
+            <div class="text-[12rem] font-black text-slate-100 leading-none select-none">
+                404
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-7xl animate-bounce">🧭</span>
+            </div>
+        </div>
+
+        <div class="space-y-4 animate-fade-up" style="animation-delay: 0.2s">
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter">Opps! Tersesat?</h1>
+            <p class="text-slate-500 font-medium">
+                Halaman yang Anda cari tidak ditemukan atau mungkin telah dipindahkan ke ruang kelas lain.
+            </p>
+        </div>
+
+        <div class="mt-10 flex flex-col gap-3 animate-fade-up" style="animation-delay: 0.4s">
+            <a href="/" class="bg-indigo-600 text-white font-black py-4 px-8 rounded-[1.5rem] shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all transform active:scale-95 flex items-center justify-center gap-3">
+                <span>🏠</span> Kembali ke Dashboard
+            </a>
+            <button onclick="window.history.back()" class="bg-white text-slate-500 font-bold py-4 px-8 rounded-[1.5rem] border border-slate-100 hover:bg-slate-50 transition">
+                Kembali ke Halaman Sebelumnya
+            </button>
+        </div>
+
+        <p class="mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+            EduFlow Academic System v2.0
+        </p>
+    </div>
+</div>
+
+<style>
+    /* Menambahkan animasi jika belum ada di CSS utama */
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+        animation: fade-up 0.6s ease-out forwards;
+    }
+</style>
